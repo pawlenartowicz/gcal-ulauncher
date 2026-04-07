@@ -75,7 +75,7 @@ def next_weekday(d: date, target_wd: int, mode: str) -> date:
     return d + timedelta(days=(delta if delta != 0 else 7))
 
 
-def parse_date(s: str, now_local: datetime) -> date | None:
+def parse_date(s: str, now_local: datetime, date_order: str = "mdy") -> date | None:
     if not s:
         return None
     s0 = _strip_ordinal(s.strip().lower())
@@ -97,8 +97,12 @@ def parse_date(s: str, now_local: datetime) -> date | None:
 
     m = re.fullmatch(r"(\d{1,2})[./-](\d{1,2})", s0)
     if m:
-        mm = int(m.group(1))
-        dd = int(m.group(2))
+        if date_order == "dmy":
+            dd = int(m.group(1))
+            mm = int(m.group(2))
+        else:
+            mm = int(m.group(1))
+            dd = int(m.group(2))
         yy = today.year
         try:
             candidate = date(yy, mm, dd)
@@ -455,13 +459,17 @@ def make_calendar_url(
     return build_url(base_url, params)
 
 
-def fmt_date(d: date) -> str:
-    # "Mar 4 2025"
+def fmt_date(d: date, date_order: str = "mdy") -> str:
+    # "Mar 4 2025" (mdy) or "4 Mar 2025" (dmy)
+    if date_order == "dmy":
+        return f"{d.day} {d.strftime('%b')} {d.year}"
     return f"{d.strftime('%b')} {d.day} {d.year}"
 
 
-def fmt_time_short(t: time) -> str:
-    # "4p" or "4:30p"
+def fmt_time_short(t: time, time_display: str = "12h") -> str:
+    # "4p" / "4:30p" (12h) or "16:30" (24h)
+    if time_display == "24h":
+        return f"{t.hour}:{t.minute:02d}"
     h24 = t.hour
     mi = t.minute
     ap = "a" if h24 < 12 else "p"
@@ -503,6 +511,8 @@ class KeywordQueryEventListener(EventListener):
         except ValueError:
             default_duration = 60
 
+        date_order = extension.preferences.get("date_order", "mdy").strip() or "mdy"
+        time_display = extension.preferences.get("time_display", "12h").strip() or "12h"
         alias_map = parse_aliases(extension.preferences.get("guest_aliases", ""))
 
         kw_personal = extension.preferences.get("kw_personal", "event")
@@ -546,7 +556,7 @@ class KeywordQueryEventListener(EventListener):
                 parts["on"] = inferred
                 title = title2 or title
 
-        d = parse_date(parts.get("on", ""), now_local) or now_local.date()
+        d = parse_date(parts.get("on", ""), now_local, date_order) or now_local.date()
 
         details = (parts.get("note", "") or "").strip()
         location = (parts.get("in", "") or "").strip()
@@ -626,11 +636,11 @@ class KeywordQueryEventListener(EventListener):
                 src=src,
             )
 
-            time_str = f"{fmt_time_short(start_local.time())}-{fmt_time_short(end_local.time())}"
+            time_str = f"{fmt_time_short(start_local.time(), time_display)}-{fmt_time_short(end_local.time(), time_display)}"
             dur_str = fmt_duration(duration_min)
 
         # Build the compact display line
-        date_str = fmt_date(d)
+        date_str = fmt_date(d, date_order)
         guests_count = len(guests)
         guests_list = ", ".join(guest_display) if guest_display else ""
         if guests_list:

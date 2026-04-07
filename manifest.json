@@ -11,6 +11,8 @@
     { "id": "kw_other", "type": "keyword", "name": "Other keyword", "default_value": "oevent" },
 
     { "id": "tz", "type": "input", "name": "Time zone (IANA)", "default_value": "America/Denver" },
+    { "id": "date_order", "type": "select", "name": "Date format", "default_value": "mdy", "options": [{"value": "mdy", "text": "MM/DD (Mar 4)"}, {"value": "dmy", "text": "DD/MM (4 Mar)"}] },
+    { "id": "time_display", "type": "select", "name": "Time display", "default_value": "12h", "options": [{"value": "12h", "text": "12h (4:30p)"}, {"value": "24h", "text": "24h (16:30)"}] },
     { "id": "default_duration", "type": "input", "name": "Default duration (minutes)", "default_value": "60" },
 
     { "id": "personal_base_url", "type": "input", "name": "Personal base URL", "default_value": "https://calendar.google.com/calendar/u/0/r/eventedit" },
